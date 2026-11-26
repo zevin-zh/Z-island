@@ -107,7 +107,9 @@ struct NotchClipboardView: View {
             header
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // alignment: .top 不能省：默认是居中，而两种状态的内容高度不一样（有 chip / 没 chip），
+        // 整体会被上下居中，未尾就是标题跟着上下飘几 pt。
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onHover { updateSuppression(for: $0) }
         .onDisappear {
             updateSuppression(for: false)
@@ -226,6 +228,9 @@ struct NotchClipboardView: View {
                 .accessibilityLabel(Text("Clear History"))
             }
         }
+        // 行高钉死：有 chip 时行高 26，没 chip 时只剩标题（~19），
+        // 不钉的话标题会在空/非空两种状态之间上下飘 5pt。
+        .frame(height: 26)
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
