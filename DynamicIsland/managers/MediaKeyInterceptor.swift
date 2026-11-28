@@ -141,6 +141,7 @@ final class MediaKeyInterceptor {
     private var retryTimer: Timer?
     private var retryStartDate: Date?
     private var retryAttempts = 0
+    private var activationObserver: NSObjectProtocol?
 #if canImport(ApplicationServices)
     private var didRequestAccessibilityPrompt = false
 #endif
@@ -169,10 +170,14 @@ final class MediaKeyInterceptor {
             return true
         }
 
+        // 先查一次：已经授权（AXIsProcessTrusted()）就什么都不做；没授权才弹系统授权框。
+        // 没有这个权限 CGEvent.tapCreate 永远失败，媒体键就拦不到。
 #if canImport(ApplicationServices)
         requestAccessibilityPermissionIfNeeded()
 #endif
 
+        // 用户去设置里打开开关回来时，立即重试安装。
+        installActivationObserverIfNeeded()
         if installTap() {
             return true
         }
@@ -301,6 +306,10 @@ final class MediaKeyInterceptor {
 
     func stop() {
         cancelTapRetry()
+        if let activationObserver {
+            NotificationCenter.default.removeObserver(activationObserver)
+            self.activationObserver = nil
+        }
         isInterceptionAvailable = false
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
@@ -312,6 +321,22 @@ final class MediaKeyInterceptor {
         eventTap = nil
         runLoopSource = nil
         isTapEnabled = false
+    }
+
+    /// 用户去系统设置里授权完回到本 app 时，立即重试一次。
+    ///
+    /// 重试定时器一小时后就放弃了，而“去设置里打开开关”往往发生在启动之后很久，
+    /// 靠固定间隔的轮询接不住这个时间差。
+    private func installActivationObserverIfNeeded() {
+        guard activationObserver == nil else { return }
+        activationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, self.eventTap == nil, self.shouldEnableTap else { return }
+            _ = self.installTap()
+        }
     }
 
     private func updateTapState() {
@@ -459,8 +484,14 @@ final class MediaKeyInterceptor {
     }
 }
 
+
 #if canImport(ApplicationServices)
 extension MediaKeyInterceptor {
+    /// 请求辅助功能权限。
+    ///
+    /// 没这个权限 `CGEvent.tapCreate` 装不上，媒体键就拦不到。系统对这个 app
+    /// 只会弹一次授权框，之后同样的调用只会静默返回 false，所以弹完之后
+    /// 还得让用户去系统设置里把开关打开 —— 面板由菜单里的「打开辅助功能设置」负责。
     private func requestAccessibilityPermissionIfNeeded() {
         guard !AXIsProcessTrusted(), !didRequestAccessibilityPrompt else { return }
         if AppRuntimeEnvironment.isUITesting { return }
@@ -471,3 +502,4 @@ extension MediaKeyInterceptor {
     }
 }
 #endif
+

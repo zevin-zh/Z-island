@@ -53,9 +53,6 @@ struct DynamicNotchApp: App {
             LayoutPicker()
             Divider()
             LaunchAtLoginToggle()
-            GrantAllPermissionsButton()
-            Divider()
-            ShowMenuBarIconToggle()
             Divider()
             CheckForUpdatesButton(updater: updaterController.updater)
             Button("Restart Z-island") {
@@ -128,21 +125,6 @@ struct LaunchAtLoginToggle: View {
     }
 }
 
-/// One press for every runtime permission the app can ask for itself.
-///
-/// Accessibility, Screen Recording and Notifications are each requested only
-/// when the matching preflight check says they are missing; anything the app
-/// cannot grant on its own sends the user to the right System Settings pane.
-struct GrantAllPermissionsButton: View {
-    var body: some View {
-        Button {
-            PermissionsRequester.grantAll()
-        } label: {
-            Label("Grant All Permissions", systemImage: "checkmark.shield")
-        }
-    }
-}
-
 /// 在默认布局与简约布局之间切换。
 ///
 /// 两套布局的展开尺寸不同，而窗口尺寸只在开岛时算一次；所以岛上还开着时
@@ -174,22 +156,6 @@ struct LayoutPicker: View {
             Label("Layout", systemImage: "rectangle.3.group")
         }
         .pickerStyle(.inline)
-    }
-}
-
-/// Hides or restores the menu-bar item the whole app hangs off.
-///
-/// The app runs as an agent (`LSUIElement`), so this item is its only entry
-/// point. Turning it off is reversible from the command line —
-/// `defaults write <bundle id> menubarIcon -bool true` — which is worth
-/// knowing before switching it off.
-struct ShowMenuBarIconToggle: View {
-    @Default(.menubarIcon) private var showMenuBarIcon
-
-    var body: some View {
-        Toggle(isOn: $showMenuBarIcon) {
-            Label("Show Menu Bar Icon", systemImage: "menubar.rectangle")
-        }
     }
 }
 
