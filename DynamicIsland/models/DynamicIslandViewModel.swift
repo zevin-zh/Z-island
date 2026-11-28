@@ -238,13 +238,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         resetScrollGestureSuppression()
         resetAutoCloseSuppression()
 
-        // Set the current view to shelf if it contains files and the user enables openShelfByDefault
-        // Otherwise, if the user has not enabled openLastTabByDefault, fall back to the shelf
-        if !ShelfStateViewModel.shared.isEmpty && Defaults[.openShelfByDefault] && !Defaults[.enableMinimalisticUI] {
-            coordinator.currentView = .shelf
-        } else if !coordinator.openLastTabByDefault {
-            // 主页面已移除：默认落在暂存架。
-            coordinator.currentView = .shelf
+        // 关闭时把页签归位到默认页。真正的“拖文件进来”路径会自己强制切回暂存架
+        // （NotchWindow 的 enterDragSession / performDragOperation），所以这里不再按暂存架
+        // 是否为空来抢默认页 —— 否则暂存架里留着一个文件，默认页就永远回不到剪贴板。
+        if !coordinator.openLastTabByDefault {
+            coordinator.currentView = DynamicIslandViewCoordinator.defaultOpenView
         }
     }
 

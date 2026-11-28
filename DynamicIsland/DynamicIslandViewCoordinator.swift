@@ -82,7 +82,12 @@ class DynamicIslandViewCoordinator: ObservableObject {
     /// 界面标签顺序与内部 tabOrder 不一定一致，点击时由调用方按可见顺序指定方向。
     var pendingTabDirectionOverride: Bool?
     
-    @Published var currentView: NotchViews = .shelf {
+    /// 面板打开时的默认页签。剪贴板管理器开着就进剪贴板，否则只能回暂存架。
+    static var defaultOpenView: NotchViews {
+        Defaults[.enableClipboardManager] && !Defaults[.enableMinimalisticUI] ? .clipboard : .shelf
+    }
+
+    @Published var currentView: NotchViews = DynamicIslandViewCoordinator.defaultOpenView {
         didSet {
             // Track direction before SwiftUI re-renders
             if let override = pendingTabDirectionOverride {

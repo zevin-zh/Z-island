@@ -1155,7 +1155,7 @@ final class NotchFileDropCatcher: NSView {
     // 点击刘海仍然要能展开，所以不透明于鼠标事件。
     override func mouseDown(with event: NSEvent) {
         NotchBridge.shared.viewModel?.open()
-        DynamicIslandViewCoordinator.shared.currentView = .shelf
+        DynamicIslandViewCoordinator.shared.currentView = DynamicIslandViewCoordinator.defaultOpenView
     }
 
     private func fileURLs(_ info: NSDraggingInfo) -> [URL] {
